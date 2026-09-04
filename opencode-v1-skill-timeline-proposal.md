@@ -930,6 +930,15 @@ The plugin should feel like a natural extension of OpenCode's existing `/timelin
 
 ## References
 
+- OpenCode plugin documentation — plugin creation, dependencies, TypeScript support, events, and examples:
+  https://opencode.ai/docs/plugins/#create-a-plugin
+
+- `zenobi-us/bun-module` — Bun module reference repository:
+  https://github.com/zenobi-us/bun-module
+
+- `zenobi-us/opencode-plugin-template` — template repository for OpenCode plugins:
+  https://github.com/zenobi-us/opencode-plugin-template/
+
 - OpenCode v2 migration guide — explicitly states that v2 uses a new plugin API and that v1 plugins will not work in v2:  
   https://opencode.ai/v2/docs/migrate-v1
 
