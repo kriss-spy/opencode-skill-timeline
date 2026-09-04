@@ -1,6 +1,7 @@
 import { describe, expect, mock, test } from "bun:test"
 import type { TuiPluginApi } from "@opencode-ai/plugin/tui"
-import { openSkillTimeline, registerSkillTimeline } from "../src/tui"
+import { openSkillTimeline, registerSkillTimeline, scrollToTimelineEntry, selectTimelineEntry } from "../src/tui"
+import type { SkillTimelineEntry } from "../src/types"
 
 interface RegisteredCommand {
   name: string
@@ -107,5 +108,52 @@ describe("skill timeline TUI registration", () => {
 
     expect(openSkillTimeline(harness.api)).toBe(true)
     expect(harness.replace).toHaveBeenCalledTimes(1)
+  })
+
+  test("locates the turn-start message using the session viewport", () => {
+    const scrollBy = mock(() => {})
+    const target = { id: "user-message-1", y: 12, getChildren: () => [] }
+    const viewport = { id: "session-scroll", y: 3, getChildren: () => [target], scrollBy }
+    const root = { id: "root", y: 0, getChildren: () => [viewport] }
+    const api = { renderer: { root } } as unknown as TuiPluginApi
+    const entry = {
+      sessionID: "session-1",
+      messageID: "assistant-message-1",
+      anchorMessageID: "user-message-1",
+      partID: "part-1",
+      callID: "call-1",
+      skill: "testing",
+      timestamp: 100,
+      context: "Run the tests.",
+      status: "completed",
+    } satisfies SkillTimelineEntry
+
+    expect(scrollToTimelineEntry(api, entry)).toBe(true)
+    expect(scrollBy).toHaveBeenCalledWith(8)
+  })
+
+  test("warns only when the containing message cannot be rendered", () => {
+    const harness = fakeApi()
+    const root = { id: "root", y: 0, getChildren: () => [] }
+    ;(harness.api as unknown as { renderer: { root: typeof root } }).renderer = { root }
+    const entry = {
+      sessionID: "session-1",
+      messageID: "assistant-message-1",
+      anchorMessageID: "missing-user-message",
+      partID: "part-1",
+      callID: "call-1",
+      skill: "testing",
+      timestamp: 100,
+      context: "Run the tests.",
+      status: "completed",
+    } satisfies SkillTimelineEntry
+
+    expect(selectTimelineEntry(harness.api, entry)).toBe(false)
+    expect(harness.clear).toHaveBeenCalledTimes(1)
+    expect(harness.toast).toHaveBeenCalledWith({
+      variant: "warning",
+      title: "Skill Timeline",
+      message: "The containing message is not currently rendered.",
+    })
   })
 })

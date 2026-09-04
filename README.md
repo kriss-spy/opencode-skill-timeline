@@ -40,4 +40,4 @@ Restart OpenCode and run `/skill-timeline` from an open session.
 
 ## Locate behavior
 
-The current public v1 plugin API does not expose the session view's internal scroll-to-message primitive. Selecting a row therefore closes the modal and displays its call and message identifiers, following the proposal's documented fallback behavior.
+Moving through the timeline scrolls the session behind the modal, matching OpenCode's built-in `/timeline`. Selecting a row closes the modal with the user message that began the skill call's turn aligned near the top of the session viewport. If that message is not currently renderable, the plugin shows a warning instead of pretending the jump succeeded.

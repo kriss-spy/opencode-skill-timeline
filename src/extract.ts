@@ -43,6 +43,7 @@ export function extractSkillTimeline(
 ): SkillTimelineEntry[] {
   let precedingAssistantText: string | undefined
   let precedingUserText: string | undefined
+  let anchorMessageID: string | undefined
   const entries: Array<SkillTimelineEntry & { order: number }> = []
   let order = 0
 
@@ -50,6 +51,7 @@ export function extractSkillTimeline(
     if (message.role === "user") {
       precedingAssistantText = undefined
       precedingUserText = undefined
+      anchorMessageID = message.id
     }
 
     for (const part of partsForMessage(message.id)) {
@@ -65,6 +67,7 @@ export function extractSkillTimeline(
       entries.push({
         sessionID: message.sessionID,
         messageID: message.id,
+        anchorMessageID: anchorMessageID ?? message.id,
         partID: typeof tool.id === "string" ? tool.id : "",
         callID: typeof tool.callID === "string" ? tool.callID : "",
         skill: skillName(tool),

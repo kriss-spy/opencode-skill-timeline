@@ -26,6 +26,7 @@ describe("extractSkillTimeline", () => {
       {
         sessionID: "session-1",
         messageID: "msg-assistant",
+        anchorMessageID: "msg-user",
         partID: "part-skill",
         callID: "call-skill",
         skill: "plugin-review",

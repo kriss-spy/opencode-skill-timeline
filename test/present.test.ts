@@ -5,6 +5,7 @@ import type { SkillTimelineEntry } from "../src/types"
 const entry: SkillTimelineEntry = {
   sessionID: "session-1",
   messageID: "message-1",
+  anchorMessageID: "user-message-1",
   partID: "part-1",
   callID: "call-1",
   skill: "domain-modeling-with-a-long-name",

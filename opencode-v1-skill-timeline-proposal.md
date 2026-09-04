@@ -3,7 +3,7 @@
 ## Status
 
 - **Target:** OpenCode **v1**
-- **Release status:** Beta (`0.1.0-beta.1`)
+- **Release status:** Beta (`0.1.0-beta.2`)
 - **Pinned host:** OpenCode `1.18.27`
 - **Form:** TUI plugin
 - **Command:** `/skill-timeline`
@@ -236,6 +236,7 @@ Each displayed row should be represented internally by something similar to:
 interface SkillTimelineEntry {
   sessionID: string
   messageID?: string
+  anchorMessageID?: string
   callID?: string
 
   skill: string
@@ -487,6 +488,8 @@ where available.
 ### Preferred behavior
 
 `Enter` locates the tool call or its containing message without altering history.
+
+The v1 implementation anchors each call to the user message that began its turn and uses the renderer tree to mirror the built-in `/timeline` scroll behavior.
 
 ### Important constraint
 

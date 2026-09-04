@@ -3,6 +3,7 @@ export type SkillCallStatus = "running" | "completed" | "error"
 export interface SkillTimelineEntry {
   sessionID: string
   messageID: string
+  anchorMessageID: string
   partID: string
   callID: string
   skill: string

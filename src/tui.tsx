@@ -8,19 +8,51 @@ import type { SkillTimelineEntry, TimelineMessage } from "./types"
 
 const commandName = "skill-timeline.open"
 
+interface RenderTreeNode {
+  readonly id: string
+  readonly y: number
+  getChildren(): RenderTreeNode[]
+  scrollBy?: (delta: number | { x: number; y: number }) => void
+}
+
 function sessionEntries(api: TuiPluginApi, sessionID: string): SkillTimelineEntry[] {
   const messages = api.state.session.messages(sessionID) as readonly TimelineMessage[]
   return extractSkillTimeline(messages, (messageID) => api.state.part(messageID))
 }
 
-function locateFallback(api: TuiPluginApi, entry: SkillTimelineEntry) {
+function findMessageViewport(
+  node: RenderTreeNode,
+  messageID: string,
+): { viewport: RenderTreeNode & { scrollBy: NonNullable<RenderTreeNode["scrollBy"]> }; target: RenderTreeNode } | undefined {
+  const children = node.getChildren()
+  if (node.scrollBy) {
+    const target = children.find((child) => child.id === messageID)
+    if (target) return { viewport: node as RenderTreeNode & { scrollBy: NonNullable<RenderTreeNode["scrollBy"]> }, target }
+  }
+  for (const child of children) {
+    const result = findMessageViewport(child, messageID)
+    if (result) return result
+  }
+}
+
+export function scrollToTimelineEntry(api: TuiPluginApi, entry: SkillTimelineEntry): boolean {
+  const result = findMessageViewport(api.renderer.root as unknown as RenderTreeNode, entry.anchorMessageID)
+  if (!result) return false
+  result.viewport.scrollBy(result.target.y - result.viewport.y - 1)
+  return true
+}
+
+export function selectTimelineEntry(api: TuiPluginApi, entry: SkillTimelineEntry): boolean {
+  const located = scrollToTimelineEntry(api, entry)
   api.ui.dialog.clear()
-  const identifier = entry.callID || entry.partID || entry.messageID
-  api.ui.toast({
-    variant: "info",
-    title: "Skill Timeline",
-    message: `Skill call ${identifier} in message ${entry.messageID}`,
-  })
+  if (!located) {
+    api.ui.toast({
+      variant: "warning",
+      title: "Skill Timeline",
+      message: "The containing message is not currently rendered.",
+    })
+  }
+  return located
 }
 
 function currentSessionID(api: TuiPluginApi): string | undefined {
@@ -56,7 +88,8 @@ function TimelineDialog(props: { api: TuiPluginApi; sessionID: string }) {
     flat: true,
     skipFilter: true,
     onFilter: setQuery,
-    onSelect: (option) => locateFallback(props.api, option.value),
+    onMove: (option) => scrollToTimelineEntry(props.api, option.value),
+    onSelect: (option) => selectTimelineEntry(props.api, option.value),
   })
 }
 
