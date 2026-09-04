@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "opencode-skill-timeline",
+  "version": "0.1.0-beta.1",
+  "description": "Audit skill invocations in the current OpenCode session.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "\"$npm_execpath\" build ./src/tui.tsx --outdir ./dist --target bun --external @opencode-ai/plugin --external @opencode-ai/plugin/tui --external @opentui/core --external @opentui/keymap --external @opentui/solid --external solid-js",
+    "check": "\"$npm_execpath\" run typecheck && \"$npm_execpath\" run test && \"$npm_execpath\" run build",
+    "prepack": "\"$npm_execpath\" run check",
+    "test": "cd test && \"$npm_execpath\" test beta.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./tui": "./dist/tui.js"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "opencode": ">=1.18.27 <2"
+  },
+  "peerDependencies": {
+    "@opentui/core": "^0.4.5",
+    "@opentui/keymap": "^0.4.5",
+    "@opentui/solid": "^0.4.5",
+    "solid-js": "^1.9.12"
+  },
+  "devDependencies": {
+    "@opencode-ai/plugin": "1.18.27",
+    "@opentui/core": "0.4.5",
+    "@opentui/keymap": "0.4.5",
+    "@opentui/solid": "0.4.5",
+    "@types/bun": "1.3.14",
+    "solid-js": "1.9.12",
+    "typescript": "5.9.3"
+  }
+}

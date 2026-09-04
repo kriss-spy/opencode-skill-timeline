@@ -2,10 +2,12 @@
 
 ## Status
 
-**Target:** OpenCode **v1**  
-**Form:** TUI plugin  
-**Command:** `/skill-timeline`  
-**Primary goal:** Make skill usage in a session easy to audit without manually reading the full conversation/tool output.
+- **Target:** OpenCode **v1**
+- **Release status:** Beta (`0.1.0-beta.1`)
+- **Pinned host:** OpenCode `1.18.27`
+- **Form:** TUI plugin
+- **Command:** `/skill-timeline`
+- **Primary goal:** Make skill usage in a session easy to audit without manually reading the full conversation/tool output.
 
 This project is intentionally scoped to **OpenCode v1**. OpenCode v2 uses a new, incompatible plugin API and should be treated as a separate future port rather than part of the first implementation.
 
