@@ -113,7 +113,15 @@ describe("skill timeline TUI registration", () => {
   test("locates the turn-start message using the session viewport", () => {
     const scrollBy = mock(() => {})
     const target = { id: "user-message-1", y: 12, getChildren: () => [] }
-    const viewport = { id: "session-scroll", y: 3, getChildren: () => [target], scrollBy }
+    const wrapper = { id: "wrapper", y: 2, getChildren: () => [target] }
+    const viewport = {
+      id: "session-scroll",
+      y: 3,
+      viewport: { y: 5 },
+      getChildren: () => [wrapper],
+      findDescendantById: (id: string) => id === target.id ? target : undefined,
+      scrollBy,
+    }
     const root = { id: "root", y: 0, getChildren: () => [viewport] }
     const api = { renderer: { root } } as unknown as TuiPluginApi
     const entry = {
@@ -129,7 +137,7 @@ describe("skill timeline TUI registration", () => {
     } satisfies SkillTimelineEntry
 
     expect(scrollToTimelineEntry(api, entry)).toBe(true)
-    expect(scrollBy).toHaveBeenCalledWith(8)
+    expect(scrollBy).toHaveBeenCalledWith(6)
   })
 
   test("warns only when the containing message cannot be rendered", () => {

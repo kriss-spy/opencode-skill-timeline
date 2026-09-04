@@ -133,7 +133,8 @@ describe("extractSkillTimeline", () => {
       }]],
     ])
 
-    expect(extractSkillTimeline(messages, (messageID) => parts.get(messageID) ?? [])[0]?.context)
-      .toBe("—")
+    const entry = extractSkillTimeline(messages, (messageID) => parts.get(messageID) ?? [])[0]
+    expect(entry?.context).toBe("—")
+    expect(entry?.anchorMessageID).toBe("msg-old-user")
   })
 })

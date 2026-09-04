@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test"
-import { filterTimeline, formatTimelineRow, formatTimelineTime, timelineRowWidth } from "../src/present"
+import { filterTimeline, formatTimelineFooter, formatTimelineTime, timelineSkillWidth } from "../src/present"
 import type { SkillTimelineEntry } from "../src/types"
 
 const entry: SkillTimelineEntry = {
@@ -21,12 +21,12 @@ describe("timeline presentation", () => {
     expect(filterTimeline([entry], "missing")).toEqual([])
   })
 
-  test("keeps the skill visible and bounds the row at narrow widths", () => {
-    expect(formatTimelineRow(entry, 24)).toBe("Compare the p… domain-m…")
-    expect(Bun.stringWidth(formatTimelineRow(entry, 24))).toBe(24)
-    expect(timelineRowWidth(80)).toBe(58)
-    expect(timelineRowWidth(20)).toBe(8)
-    expect(timelineRowWidth(120)).toBe(72)
+  test("protects a stable skill column and truncates only genuine overflow", () => {
+    expect(formatTimelineFooter("testing", "9:01 AM", 12, 8)).toBe("testing       9:01 AM")
+    expect(formatTimelineFooter(entry.skill, "9:01 AM", 12, 8)).toBe("domain-mode…  9:01 AM")
+    expect(timelineSkillWidth(50)).toBe(10)
+    expect(timelineSkillWidth(80)).toBe(21)
+    expect(timelineSkillWidth(160)).toBe(32)
   })
 
   test("uses the requested locale and timezone without imposing plugin defaults", () => {

@@ -3,7 +3,7 @@
 ## Status
 
 - **Target:** OpenCode **v1**
-- **Release status:** Beta (`0.1.0-beta.2`)
+- **Release status:** Beta (`0.1.0-beta.3`)
 - **Pinned host:** OpenCode `1.18.27`
 - **Form:** TUI plugin
 - **Command:** `/skill-timeline`

@@ -3,7 +3,7 @@ import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plug
 import { useTerminalDimensions } from "@opentui/solid"
 import { createComponent, createMemo, createSignal, onMount } from "solid-js"
 import { extractSkillTimeline } from "./extract"
-import { filterTimeline, formatTimelineRow, formatTimelineTime, timelineRowWidth } from "./present"
+import { filterTimeline, formatTimelineFooter, formatTimelineTime, timelineSkillWidth } from "./present"
 import type { SkillTimelineEntry, TimelineMessage } from "./types"
 
 const commandName = "skill-timeline.open"
@@ -12,7 +12,10 @@ interface RenderTreeNode {
   readonly id: string
   readonly y: number
   getChildren(): RenderTreeNode[]
+  findDescendantById?: (id: string) => RenderTreeNode | undefined
   scrollBy?: (delta: number | { x: number; y: number }) => void
+  scrollChildIntoView?: (id: string) => void
+  readonly viewport?: { readonly y: number }
 }
 
 function sessionEntries(api: TuiPluginApi, sessionID: string): SkillTimelineEntry[] {
@@ -26,7 +29,7 @@ function findMessageViewport(
 ): { viewport: RenderTreeNode & { scrollBy: NonNullable<RenderTreeNode["scrollBy"]> }; target: RenderTreeNode } | undefined {
   const children = node.getChildren()
   if (node.scrollBy) {
-    const target = children.find((child) => child.id === messageID)
+    const target = node.findDescendantById?.(messageID) ?? children.find((child) => child.id === messageID)
     if (target) return { viewport: node as RenderTreeNode & { scrollBy: NonNullable<RenderTreeNode["scrollBy"]> }, target }
   }
   for (const child of children) {
@@ -38,7 +41,9 @@ function findMessageViewport(
 export function scrollToTimelineEntry(api: TuiPluginApi, entry: SkillTimelineEntry): boolean {
   const result = findMessageViewport(api.renderer.root as unknown as RenderTreeNode, entry.anchorMessageID)
   if (!result) return false
-  result.viewport.scrollBy(result.target.y - result.viewport.y - 1)
+  result.viewport.scrollChildIntoView?.(entry.anchorMessageID)
+  const viewportY = result.viewport.viewport?.y ?? result.viewport.y
+  result.viewport.scrollBy(result.target.y - viewportY - 1)
   return true
 }
 
@@ -70,14 +75,19 @@ function TimelineDialog(props: { api: TuiPluginApi; sessionID: string }) {
   onMount(() => props.api.ui.dialog.setSize("large"))
 
   const entries = createMemo(() => sessionEntries(props.api, props.sessionID))
-  const rowWidth = createMemo(() => timelineRowWidth(dimensions().width))
-  const options = createMemo(() =>
-    filterTimeline(entries(), query()).map((entry) => ({
-      title: formatTimelineRow(entry, rowWidth()),
+  const options = createMemo(() => {
+    const rows = filterTimeline(entries(), query()).map((entry) => ({
+      entry,
+      time: formatTimelineTime(entry.timestamp),
+    }))
+    const skillWidth = timelineSkillWidth(dimensions().width)
+    const timeWidth = Math.max(0, ...rows.map((row) => Bun.stringWidth(row.time)))
+    return rows.map(({ entry, time }) => ({
+      title: entry.context,
       value: entry,
-      footer: formatTimelineTime(entry.timestamp),
-    })),
-  )
+      footer: formatTimelineFooter(entry.skill, time, skillWidth, timeWidth),
+    }))
+  })
 
   return createComponent(DialogSelect, {
     title: "Skill Timeline",

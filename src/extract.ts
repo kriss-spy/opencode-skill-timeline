@@ -51,14 +51,16 @@ export function extractSkillTimeline(
     if (message.role === "user") {
       precedingAssistantText = undefined
       precedingUserText = undefined
-      anchorMessageID = message.id
     }
 
     for (const part of partsForMessage(message.id)) {
       const text = visibleText(part)
       if (text) {
         if (message.role === "assistant") precedingAssistantText = text
-        else precedingUserText = text
+        else {
+          precedingUserText = text
+          anchorMessageID = message.id
+        }
         continue
       }
 
