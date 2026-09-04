@@ -11,6 +11,7 @@ const commandName = "skill-timeline.open"
 interface RenderTreeNode {
   readonly id: string
   readonly y: number
+  readonly plainText?: string
   getChildren(): RenderTreeNode[]
   findDescendantById?: (id: string) => RenderTreeNode | undefined
   scrollBy?: (delta: number | { x: number; y: number }) => void
@@ -38,23 +39,56 @@ function findMessageViewport(
   }
 }
 
-export function scrollToTimelineEntry(api: TuiPluginApi, entry: SkillTimelineEntry): boolean {
+function containsExactText(node: RenderTreeNode, expected: string): boolean {
+  if (node.plainText?.trim() === expected) return true
+  return node.getChildren().some((child) => containsExactText(child, expected))
+}
+
+function findSkillRow(
+  viewport: RenderTreeNode,
+  entry: SkillTimelineEntry,
+  entries: readonly SkillTimelineEntry[],
+  showDetails: boolean,
+): RenderTreeNode | undefined {
+  if (!showDetails && entry.status === "completed") return
+  const label = `Skill "${entry.skill}"`
+  const occurrence = entries.filter(
+    (candidate) =>
+      candidate.skill === entry.skill &&
+      candidate.sequence < entry.sequence &&
+      (showDetails || candidate.status !== "completed"),
+  ).length
+  return viewport.getChildren().filter((child) => containsExactText(child, label))[occurrence]
+}
+
+export function scrollToTimelineEntry(
+  api: TuiPluginApi,
+  entry: SkillTimelineEntry,
+  entries: readonly SkillTimelineEntry[] = [entry],
+): boolean {
   const result = findMessageViewport(api.renderer.root as unknown as RenderTreeNode, entry.anchorMessageID)
   if (!result) return false
-  result.viewport.scrollChildIntoView?.(entry.anchorMessageID)
+  const showDetails = api.kv?.get("tool_details_visibility", true) ?? true
+  const target = findSkillRow(result.viewport, entry, entries, showDetails)
+  if (!target) return false
+  result.viewport.scrollChildIntoView?.(target.id)
   const viewportY = result.viewport.viewport?.y ?? result.viewport.y
-  result.viewport.scrollBy(result.target.y - viewportY - 1)
+  result.viewport.scrollBy(target.y - viewportY - 1)
   return true
 }
 
-export function selectTimelineEntry(api: TuiPluginApi, entry: SkillTimelineEntry): boolean {
-  const located = scrollToTimelineEntry(api, entry)
+export function selectTimelineEntry(
+  api: TuiPluginApi,
+  entry: SkillTimelineEntry,
+  entries: readonly SkillTimelineEntry[] = [entry],
+): boolean {
+  const located = scrollToTimelineEntry(api, entry, entries)
   api.ui.dialog.clear()
   if (!located) {
     api.ui.toast({
       variant: "warning",
       title: "Skill Timeline",
-      message: "The containing message is not currently rendered.",
+      message: "The exact skill call is not rendered. Show tool details and try again.",
     })
   }
   return located
@@ -98,8 +132,8 @@ function TimelineDialog(props: { api: TuiPluginApi; sessionID: string }) {
     flat: true,
     skipFilter: true,
     onFilter: setQuery,
-    onMove: (option) => scrollToTimelineEntry(props.api, option.value),
-    onSelect: (option) => selectTimelineEntry(props.api, option.value),
+    onMove: (option) => scrollToTimelineEntry(props.api, option.value, entries()),
+    onSelect: (option) => selectTimelineEntry(props.api, option.value, entries()),
   })
 }
 

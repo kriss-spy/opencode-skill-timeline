@@ -110,16 +110,18 @@ describe("skill timeline TUI registration", () => {
     expect(harness.replace).toHaveBeenCalledTimes(1)
   })
 
-  test("locates the turn-start message using the session viewport", () => {
+  test("locates the exact skill row inside the session viewport", () => {
     const scrollBy = mock(() => {})
-    const target = { id: "user-message-1", y: 12, getChildren: () => [] }
-    const wrapper = { id: "wrapper", y: 2, getChildren: () => [target] }
+    const anchor = { id: "user-message-1", y: 12, getChildren: () => [] }
+    const skillText = { id: "skill-text", y: 40, plainText: 'Skill "testing"', getChildren: () => [] }
+    const skillRow = { id: "skill-row", y: 39, getChildren: () => [skillText] }
+    const wrapper = { id: "wrapper", y: 2, getChildren: () => [anchor] }
     const viewport = {
       id: "session-scroll",
       y: 3,
       viewport: { y: 5 },
-      getChildren: () => [wrapper],
-      findDescendantById: (id: string) => id === target.id ? target : undefined,
+      getChildren: () => [wrapper, skillRow],
+      findDescendantById: (id: string) => id === anchor.id ? anchor : undefined,
       scrollBy,
     }
     const root = { id: "root", y: 0, getChildren: () => [viewport] }
@@ -132,12 +134,52 @@ describe("skill timeline TUI registration", () => {
       callID: "call-1",
       skill: "testing",
       timestamp: 100,
+      sequence: 0,
       context: "Run the tests.",
       status: "completed",
     } satisfies SkillTimelineEntry
 
     expect(scrollToTimelineEntry(api, entry)).toBe(true)
-    expect(scrollBy).toHaveBeenCalledWith(6)
+    expect(scrollBy).toHaveBeenCalledWith(33)
+  })
+
+  test("locates repeated skill calls by chronological occurrence", () => {
+    const scrollBy = mock(() => {})
+    const anchor = { id: "user-message-1", y: 4, getChildren: () => [] }
+    const skillRow = (id: string, y: number) => ({
+      id,
+      y,
+      getChildren: () => [{ id: `${id}-text`, y, plainText: 'Skill "testing"', getChildren: () => [] }],
+    })
+    const firstRow = skillRow("skill-row-1", 10)
+    const secondRow = skillRow("skill-row-2", 30)
+    const viewport = {
+      id: "session-scroll",
+      y: 1,
+      viewport: { y: 2 },
+      getChildren: () => [anchor, firstRow, secondRow],
+      findDescendantById: (id: string) => id === anchor.id ? anchor : undefined,
+      scrollBy,
+    }
+    const api = {
+      renderer: { root: { id: "root", y: 0, getChildren: () => [viewport] } },
+    } as unknown as TuiPluginApi
+    const base = {
+      sessionID: "session-1",
+      messageID: "assistant-message-1",
+      anchorMessageID: "user-message-1",
+      partID: "part-1",
+      callID: "call-1",
+      skill: "testing",
+      timestamp: 100,
+      context: "Run the tests.",
+      status: "completed",
+    } as const
+    const first = { ...base, sequence: 0 } satisfies SkillTimelineEntry
+    const second = { ...base, partID: "part-2", callID: "call-2", sequence: 1 } satisfies SkillTimelineEntry
+
+    expect(scrollToTimelineEntry(api, second, [second, first])).toBe(true)
+    expect(scrollBy).toHaveBeenCalledWith(27)
   })
 
   test("warns only when the containing message cannot be rendered", () => {
@@ -152,6 +194,7 @@ describe("skill timeline TUI registration", () => {
       callID: "call-1",
       skill: "testing",
       timestamp: 100,
+      sequence: 0,
       context: "Run the tests.",
       status: "completed",
     } satisfies SkillTimelineEntry
@@ -161,7 +204,7 @@ describe("skill timeline TUI registration", () => {
     expect(harness.toast).toHaveBeenCalledWith({
       variant: "warning",
       title: "Skill Timeline",
-      message: "The containing message is not currently rendered.",
+      message: "The exact skill call is not rendered. Show tool details and try again.",
     })
   })
 })

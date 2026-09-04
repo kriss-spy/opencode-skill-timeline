@@ -40,4 +40,4 @@ Restart OpenCode and run `/skill-timeline` from an open session.
 
 ## Locate behavior
 
-Moving through the timeline scrolls the session behind the modal, matching OpenCode's built-in `/timeline`. Selecting a row closes the modal with the user message that began the skill call's turn aligned near the top of the session viewport. If that message is not currently renderable, the plugin shows a warning instead of pretending the jump succeeded.
+Moving through the timeline scrolls the session behind the modal, matching OpenCode's built-in `/timeline`. The plugin maps structured calls onto rendered `Skill "…"` rows by name and chronological occurrence, so repeated calls within one long assistant turn locate independently. Selecting a row closes the modal with that exact skill row aligned near the top of the session viewport. If tool details are hidden and the row is not rendered, the plugin warns instead of jumping to the wrong place.

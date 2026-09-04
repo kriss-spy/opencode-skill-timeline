@@ -8,6 +8,7 @@ export interface SkillTimelineEntry {
   callID: string
   skill: string
   timestamp: number
+  sequence: number
   context: string
   status: SkillCallStatus
 }

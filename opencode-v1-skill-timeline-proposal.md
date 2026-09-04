@@ -3,7 +3,7 @@
 ## Status
 
 - **Target:** OpenCode **v1**
-- **Release status:** Beta (`0.1.0-beta.3`)
+- **Release status:** Beta (`0.1.0-beta.4`)
 - **Pinned host:** OpenCode `1.18.27`
 - **Form:** TUI plugin
 - **Command:** `/skill-timeline`
@@ -489,7 +489,7 @@ where available.
 
 `Enter` locates the tool call or its containing message without altering history.
 
-The v1 implementation anchors each call to the user message that began its turn and uses the renderer tree to mirror the built-in `/timeline` scroll behavior.
+The v1 implementation uses the turn's visible user message to identify the session viewport, then maps structured calls to rendered skill rows by name and chronological occurrence. This distinguishes multiple calls within one long assistant turn while mirroring the built-in `/timeline` scroll behavior.
 
 ### Important constraint
 

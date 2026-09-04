@@ -10,6 +10,7 @@ const entry: SkillTimelineEntry = {
   callID: "call-1",
   skill: "domain-modeling-with-a-long-name",
   timestamp: new Date("2026-09-04T09:01:00Z").getTime(),
+  sequence: 0,
   context: "Compare the proposed terminology with the current domain model.",
   status: "completed",
 }

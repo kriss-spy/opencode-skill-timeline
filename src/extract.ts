@@ -44,7 +44,7 @@ export function extractSkillTimeline(
   let precedingAssistantText: string | undefined
   let precedingUserText: string | undefined
   let anchorMessageID: string | undefined
-  const entries: Array<SkillTimelineEntry & { order: number }> = []
+  const entries: SkillTimelineEntry[] = []
   let order = 0
 
   for (const message of messages) {
@@ -74,14 +74,12 @@ export function extractSkillTimeline(
         callID: typeof tool.callID === "string" ? tool.callID : "",
         skill: skillName(tool),
         timestamp: timestamp(tool, message.time.created),
+        sequence: order++,
         context: precedingAssistantText ?? precedingUserText ?? "—",
         status: status(tool),
-        order: order++,
       })
     }
   }
 
-  return entries
-    .sort((left, right) => right.timestamp - left.timestamp || left.order - right.order)
-    .map(({ order: _, ...entry }) => entry)
+  return entries.sort((left, right) => right.timestamp - left.timestamp || left.sequence - right.sequence)
 }

@@ -31,6 +31,7 @@ describe("extractSkillTimeline", () => {
         callID: "call-skill",
         skill: "plugin-review",
         timestamp: 250,
+        sequence: 0,
         context: "The code is ready. I should review it now.",
         status: "completed",
       },
