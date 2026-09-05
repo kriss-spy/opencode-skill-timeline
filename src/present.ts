@@ -1,5 +1,7 @@
 import type { SkillTimelineEntry } from "./types"
 
+const contextColumnBreakpoint = 60
+
 function truncate(value: string, width: number): string {
   if (width <= 0) return ""
   if (Bun.stringWidth(value) <= width) return value
@@ -32,8 +34,25 @@ export function timelineSkillWidth(terminalWidth: number): number {
   return Math.max(8, Math.min(32, Math.floor((Math.max(0, terminalWidth) - 20) * 0.35)))
 }
 
+export function timelineShowsContext(terminalWidth: number): boolean {
+  return terminalWidth > contextColumnBreakpoint
+}
+
 export function formatTimelineFooter(skill: string, time: string, skillWidth: number, timeWidth: number): string {
   return `${pad(truncate(skill, skillWidth), skillWidth)} ${padStart(time, timeWidth)}`
+}
+
+export function formatTimelineRow(
+  entry: SkillTimelineEntry,
+  time: string,
+  terminalWidth: number,
+  timeWidth: number,
+): { title: string; footer: string } {
+  if (!timelineShowsContext(terminalWidth)) return { title: entry.skill, footer: time }
+  return {
+    title: entry.context,
+    footer: formatTimelineFooter(entry.skill, time, timelineSkillWidth(terminalWidth), timeWidth),
+  }
 }
 
 export function formatTimelineTime(timestamp: number, locale?: string, timeZone?: string): string {

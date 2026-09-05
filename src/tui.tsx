@@ -3,7 +3,11 @@ import type { TuiPlugin, TuiPluginApi, TuiPluginModule } from "@opencode-ai/plug
 import { useTerminalDimensions } from "@opentui/solid"
 import { createComponent, createMemo, createSignal, onMount } from "solid-js"
 import { extractSkillTimeline } from "./extract"
-import { filterTimeline, formatTimelineFooter, formatTimelineTime, timelineSkillWidth } from "./present"
+import {
+  filterTimeline,
+  formatTimelineRow,
+  formatTimelineTime,
+} from "./present"
 import type { SkillTimelineEntry, TimelineMessage } from "./types"
 
 const commandName = "skill-timeline.open"
@@ -114,13 +118,9 @@ function TimelineDialog(props: { api: TuiPluginApi; sessionID: string }) {
       entry,
       time: formatTimelineTime(entry.timestamp),
     }))
-    const skillWidth = timelineSkillWidth(dimensions().width)
+    const terminalWidth = dimensions().width
     const timeWidth = Math.max(0, ...rows.map((row) => Bun.stringWidth(row.time)))
-    return rows.map(({ entry, time }) => ({
-      title: entry.context,
-      value: entry,
-      footer: formatTimelineFooter(entry.skill, time, skillWidth, timeWidth),
-    }))
+    return rows.map(({ entry, time }) => ({ ...formatTimelineRow(entry, time, terminalWidth, timeWidth), value: entry }))
   })
 
   return createComponent(DialogSelect, {

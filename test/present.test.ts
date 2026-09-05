@@ -1,5 +1,12 @@
 import { describe, expect, test } from "bun:test"
-import { filterTimeline, formatTimelineFooter, formatTimelineTime, timelineSkillWidth } from "../src/present"
+import {
+  filterTimeline,
+  formatTimelineFooter,
+  formatTimelineRow,
+  formatTimelineTime,
+  timelineShowsContext,
+  timelineSkillWidth,
+} from "../src/present"
 import type { SkillTimelineEntry } from "../src/types"
 
 const entry: SkillTimelineEntry = {
@@ -28,6 +35,19 @@ describe("timeline presentation", () => {
     expect(timelineSkillWidth(50)).toBe(10)
     expect(timelineSkillWidth(80)).toBe(21)
     expect(timelineSkillWidth(160)).toBe(32)
+  })
+
+  test("drops context at extreme widths while retaining it in wider dialogs", () => {
+    expect(timelineShowsContext(60)).toBe(false)
+    expect(timelineShowsContext(61)).toBe(true)
+    expect(formatTimelineRow(entry, "9:01 AM", 60, 8)).toEqual({
+      title: "domain-modeling-with-a-long-name",
+      footer: "9:01 AM",
+    })
+    expect(formatTimelineRow(entry, "9:01 AM", 61, 8)).toEqual({
+      title: "Compare the proposed terminology with the current domain model.",
+      footer: "domain-modeli…  9:01 AM",
+    })
   })
 
   test("uses the requested locale and timezone without imposing plugin defaults", () => {

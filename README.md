@@ -2,7 +2,7 @@
 
 `/skill-timeline` is an OpenCode v1 TUI plugin for auditing every `skill` tool invocation in the current session.
 
-The modal uses OpenCode's native dialog, keymap, session state, and current theme. Each row shows the visible context immediately preceding the call, the skill name, and the call time. Search is local and matches the full context and skill name; repeated, running, and failed invocations remain distinct.
+The modal uses OpenCode's native dialog, keymap, session state, and current theme. Each row shows the visible context immediately preceding the call, the skill name, and the call time. At narrow terminal widths, the context column is omitted so the skill name and time remain readable. Search is local and matches the full context and skill name; repeated, running, and failed invocations remain distinct.
 
 ## Compatibility
 
