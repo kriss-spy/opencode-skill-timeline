@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1 - 2026-09-05
+
+- Add a checksum-verified installer for global OpenCode installation.
+- Document one-line installation with `curl` and Bash.
+
 ## 0.1.0 - 2026-09-05
 
 First stable release.

@@ -21,6 +21,16 @@ The production plugin lives in `src/`.
 
 ## Local installation
 
+Install the latest release globally:
+
+```bash
+curl -fsSL https://github.com/kriss-spy/opencode-skill-timeline/releases/latest/download/install.sh | bash
+```
+
+Restart OpenCode, open a session, and run `/skill-timeline`. The installer downloads the release bundle, verifies its SHA-256 checksum, and writes it to `~/.config/opencode/plugins/skill-timeline.js` (or `$XDG_CONFIG_HOME/opencode/plugins/skill-timeline.js` when set).
+
+### Install from source
+
 Build the package:
 
 ```bash
