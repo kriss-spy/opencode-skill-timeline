@@ -8,7 +8,9 @@ trap 'rm -rf -- "${test_tmp_dir}"' EXIT
 readonly release_dir="${test_tmp_dir}/release"
 mkdir -p -- "${release_dir}"
 printf 'export default {}\n' > "${release_dir}/skill-timeline.js"
-(cd "${release_dir}" && sha256sum skill-timeline.js > skill-timeline.js.sha256)
+# Release checksums are generated from the build path, while the asset is
+# downloaded by its release name.
+(cd "${release_dir}" && sha256sum skill-timeline.js | sed 's#skill-timeline.js#dist/tui.js#' > skill-timeline.js.sha256)
 
 run_installer() {
   HOME="$1" OPENCODE_SKILL_TIMELINE_RELEASE_URL="file://${release_dir}" bash ../install.sh >/dev/null
@@ -48,5 +50,14 @@ grep -q '// Keep the theme and the existing plugin.' "${existing_config_dir}/tui
 grep -q '"theme": "catppuccin"' "${existing_config_dir}/tui.jsonc"
 grep -q 'file:///tmp/existing.js' "${existing_config_dir}/tui.jsonc"
 [[ ! -e "${existing_config_dir}/tui.json" ]]
+
+printf '%064d  dist/tui.js\n' 0 > "${release_dir}/skill-timeline.js.sha256"
+readonly rejected_home="${test_tmp_dir}/rejected"
+mkdir -p -- "${rejected_home}"
+if run_installer "${rejected_home}" 2>/dev/null; then
+  echo "installer accepted an incorrect checksum" >&2
+  exit 1
+fi
+[[ ! -e "${rejected_home}/.config/opencode/plugins/skill-timeline.js" ]]
 
 echo "installer registration tests passed"

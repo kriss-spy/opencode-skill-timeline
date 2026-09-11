@@ -27,17 +27,26 @@ curl --fail --location --silent --show-error \
   "${release_base_url}/skill-timeline.js.sha256" \
   --output "${installer_tmp_dir}/skill-timeline.js.sha256"
 
+read -r expected_checksum _ < "${installer_tmp_dir}/skill-timeline.js.sha256"
+readonly expected_checksum
+if [[ ! "${expected_checksum}" =~ ^[0-9a-fA-F]{64}$ ]]; then
+  echo "The release checksum is invalid." >&2
+  exit 1
+fi
+
 if command -v sha256sum >/dev/null 2>&1; then
-  (cd "${installer_tmp_dir}" && sha256sum --check skill-timeline.js.sha256)
+  actual_checksum="$(sha256sum "${installer_tmp_dir}/skill-timeline.js" | cut -d ' ' -f 1)"
 elif command -v shasum >/dev/null 2>&1; then
-  readonly expected_checksum="$(cut -d ' ' -f 1 "${installer_tmp_dir}/skill-timeline.js.sha256")"
-  readonly actual_checksum="$(shasum -a 256 "${installer_tmp_dir}/skill-timeline.js" | cut -d ' ' -f 1)"
-  if [[ "${actual_checksum}" != "${expected_checksum}" ]]; then
-    echo "Checksum verification failed." >&2
-    exit 1
-  fi
+  actual_checksum="$(shasum -a 256 "${installer_tmp_dir}/skill-timeline.js" | cut -d ' ' -f 1)"
 else
   echo "A SHA-256 utility (sha256sum or shasum) is required." >&2
+  exit 1
+fi
+readonly actual_checksum
+
+readonly normalized_expected_checksum="$(printf '%s' "${expected_checksum}" | tr 'A-F' 'a-f')"
+if [[ "${actual_checksum}" != "${normalized_expected_checksum}" ]]; then
+  echo "Checksum verification failed." >&2
   exit 1
 fi
 
