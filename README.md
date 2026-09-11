@@ -8,7 +8,8 @@ The modal uses OpenCode's native dialog, keymap, session state, and current them
 
 - OpenCode `>=1.18.27 <2`
 - Bun runtime
-- OpenCode v2 is intentionally unsupported
+
+OpenCode v2 is developed and distributed independently under [`packages/v2`](https://github.com/kriss-spy/opencode-skill-timeline/tree/main/packages/v2).
 
 ## Development
 
@@ -17,7 +18,7 @@ bun install
 bun run check
 ```
 
-The production plugin lives in `src/`.
+The production v1 plugin lives in `src/`.
 
 ## Local installation
 

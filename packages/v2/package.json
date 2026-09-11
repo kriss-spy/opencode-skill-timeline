@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json.schemastore.org/package.json",
+  "name": "opencode-skill-timeline-v2",
+  "version": "0.1.0-beta.0",
+  "description": "Audit skill invocations in an OpenCode v2 session.",
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "build": "bun build ./src/tui.ts --outfile ./dist/skill-timeline-v2.js --target bun --external @opencode/plugin --external @opencode/plugin/tui",
+    "check": "bun run typecheck && bun run test && bun run build",
+    "prepack": "bun run check",
+    "test": "bun test ./test/v2.test.ts && cd test && bash install.test.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    "./tui": "./dist/skill-timeline-v2.js"
+  },
+  "files": [
+    "dist/skill-timeline-v2.js",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "install.sh"
+  ],
+  "engines": {
+    "opencode2": ">=0.0.0-beta-19425"
+  },
+  "dependencies": {
+    "@opencode/plugin": "0.0.0-beta-19425"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "typescript": "5.9.3"
+  }
+}
