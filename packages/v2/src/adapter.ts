@@ -91,8 +91,8 @@ export async function openSkillTimelineV2(context: Context): Promise<boolean> {
   if (!sessionID) {
     context.ui.toast.show({
       variant: "warning",
-      title: "Skill Timeline",
-      message: "Open a session before using /skill-timeline.",
+      title: "Skill Timeline v2",
+      message: "Open a session before using /skill-timeline-v2.",
     })
     return false
   }
@@ -100,12 +100,12 @@ export async function openSkillTimelineV2(context: Context): Promise<boolean> {
   await context.data.session.message.sync(sessionID)
   const entries = extractV2SkillTimeline(sessionID, context.data.session.message.list(sessionID))
   if (entries.length === 0) {
-    await context.ui.dialog.alert({ title: "Skill Timeline", message: "No skill calls in this session." })
+    await context.ui.dialog.alert({ title: "Skill Timeline v2", message: "No skill calls in this session." })
     return true
   }
 
   await context.ui.dialog.select({
-    title: "Skill Timeline",
+    title: "Skill Timeline v2",
     placeholder: "Search skill or context",
     options: entries.map((entry) => ({
       title: entry.skill,
@@ -121,12 +121,12 @@ export function registerSkillTimelineV2(context: Context): void {
   context.keymap.layer(() => ({
     mode: "global",
     commands: [{
-      id: "skill-timeline.open",
-      title: "Skill Timeline",
+      id: "skill-timeline-v2.open",
+      title: "Skill Timeline v2",
       description: "Review skill calls in the current session",
       group: "Session",
       palette: true,
-      slash: { name: "skill-timeline" },
+      slash: { name: "skill-timeline-v2" },
       enabled: () => true,
       run: async () => {
         await openSkillTimelineV2(context)

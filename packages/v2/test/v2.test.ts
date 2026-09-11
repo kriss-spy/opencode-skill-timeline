@@ -5,7 +5,7 @@ import v2Plugin from "../src/tui"
 
 describe("OpenCode v2 adapter", () => {
   test("exports a v2-only plugin definition", () => {
-    expect(v2Plugin).toMatchObject({ id: "skill-timeline", setup: expect.any(Function) })
+    expect(v2Plugin).toMatchObject({ id: "skill-timeline-v2", setup: expect.any(Function) })
     expect(v2Plugin).not.toHaveProperty("tui")
   })
 
@@ -115,12 +115,12 @@ describe("OpenCode v2 adapter", () => {
 
     registerSkillTimelineV2(context)
     const command = layerFactory?.().commands?.[0]
-    expect(command).toMatchObject({ id: "skill-timeline.open", slash: { name: "skill-timeline" } })
+    expect(command).toMatchObject({ id: "skill-timeline-v2.open", slash: { name: "skill-timeline-v2" } })
     await command?.run()
 
     expect(sync).toHaveBeenCalledWith("session-2")
     expect(select).toHaveBeenCalledWith(expect.objectContaining({
-      title: "Skill Timeline",
+      title: "Skill Timeline v2",
       options: [expect.objectContaining({ title: "testing" })],
     }))
   })

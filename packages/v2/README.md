@@ -1,6 +1,6 @@
 # OpenCode v2 Skill Timeline
 
-This package is the independent OpenCode v2 beta port of `/skill-timeline`. It shares only version-neutral timeline extraction and formatting code with the v1 project; its plugin entrypoint, dependency graph, build, tests, version, release channel, and installer are separate.
+This package is the independent OpenCode v2 beta port exposed as `/skill-timeline-v2`. The v2 suffix is used for the package, plugin ID, slash command, bundle, and installed filename so it cannot collide with the v1 plugin. It shares only version-neutral timeline extraction and formatting code with the v1 project; its plugin entrypoint, dependency graph, build, tests, version, release channel, and installer are separate.
 
 ## Compatibility
 

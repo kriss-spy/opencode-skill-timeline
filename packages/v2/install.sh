@@ -269,4 +269,4 @@ print(f"Registered {plugin_url} in {config_path}")
 PY
 
 echo "Installed OpenCode v2 skill-timeline to ${plugin_path}"
-echo "Restart OpenCode v2, open a session, and run /skill-timeline."
+echo "Restart OpenCode v2, open a session, and run /skill-timeline-v2."
