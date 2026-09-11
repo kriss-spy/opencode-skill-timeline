@@ -6,10 +6,10 @@
   "type": "module",
   "license": "MIT",
   "scripts": {
-    "build": "bun build ./src/tui.ts --outfile ./dist/skill-timeline-v2.js --target bun --external @opencode/plugin --external @opencode/plugin/tui",
-    "check": "bun run typecheck && bun run test && bun run build",
+    "build": "bun build ./src/tui.ts --outfile ./dist/skill-timeline-v2.js --target bun --external @opencode-ai/plugin --external @opencode-ai/plugin/tui",
+    "check": "bun run typecheck && bun run build && bun run test",
     "prepack": "bun run check",
-    "test": "bun test ./test/v2.test.ts && cd test && bash install.test.sh",
+    "test": "bun test ./test/v2.test.ts && cd test && bash bundle.test.sh && bash install.test.sh",
     "typecheck": "tsc --noEmit"
   },
   "exports": {
@@ -23,12 +23,10 @@
     "install.sh"
   ],
   "engines": {
-    "opencode2": ">=0.0.0-beta-19425"
-  },
-  "dependencies": {
-    "@opencode/plugin": "0.0.0-beta-19425"
+    "opencode2": ">=0.0.0-beta-19059"
   },
   "devDependencies": {
+    "@opencode-ai/plugin": "0.0.0-beta-19059",
     "@types/bun": "1.3.14",
     "typescript": "5.9.3"
   }

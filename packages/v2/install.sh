@@ -5,13 +5,15 @@ set -euo pipefail
 readonly release_base_url="${OPENCODE_SKILL_TIMELINE_RELEASE_URL:-https://github.com/kriss-spy/opencode-skill-timeline/releases/download/v2-latest}"
 readonly config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
 readonly opencode_config_dir="${OPENCODE_CONFIG_DIR:-${config_home}/opencode}"
-readonly plugin_dir="${opencode_config_dir}/plugins"
-readonly plugin_path="${plugin_dir}/skill-timeline-v2.js"
+readonly plugins_dir="${opencode_config_dir}/plugins"
+readonly plugin_dir="${plugins_dir}/skill-timeline-v2"
+readonly plugin_path="${plugin_dir}/tui.js"
+readonly legacy_plugin_path="${plugins_dir}/skill-timeline-v2.js"
 installer_tmp_dir="$(mktemp -d)"
 readonly installer_tmp_dir
 
 if ! command -v python3 >/dev/null 2>&1; then
-  echo "Python 3 is required to register the v2 CLI plugin without replacing existing configuration." >&2
+  echo "Python 3 is required to register the v2 TUI plugin without replacing existing configuration." >&2
   exit 1
 fi
 
@@ -53,9 +55,10 @@ fi
 mkdir -p -- "${plugin_dir}"
 install -m 0644 "${installer_tmp_dir}/skill-timeline-v2.js" "${plugin_path}"
 
+readonly tui_config_path="${opencode_config_dir}/tui.json"
 readonly cli_config_path="${opencode_config_dir}/cli.json"
 
-python3 - "${cli_config_path}" "${plugin_path}" <<'PY'
+python3 - "${cli_config_path}" "${tui_config_path}" "${plugin_dir}" "${legacy_plugin_path}" <<'PY'
 import json
 import os
 import re
@@ -63,8 +66,10 @@ import sys
 import tempfile
 from pathlib import Path
 
-config_path = Path(sys.argv[1])
-plugin_url = Path(sys.argv[2]).resolve().as_uri()
+cli_config_path = Path(sys.argv[1])
+tui_config_path = Path(sys.argv[2])
+plugin_url = Path(sys.argv[3]).resolve().as_uri()
+legacy_plugin_url = Path(sys.argv[4]).resolve().as_uri()
 
 
 def significant_tokens(source: str):
@@ -208,10 +213,10 @@ def add_to_array(source, tokens, opening_index, value):
     return source[:last[2]] + addition + source[last[2]:], True
 
 
-def register(source: str, value: str):
+def find_top_level_array(source: str, setting: str):
     tokens = significant_tokens(source)
     if not tokens or tokens[0][0] != "{" or matching_close(tokens, 0) != len(tokens) - 1:
-        raise ValueError("the CLI configuration must contain one top-level object")
+        raise ValueError("the configuration must contain one top-level object")
 
     root_close = len(tokens) - 1
     depth = 0
@@ -222,38 +227,66 @@ def register(source: str, value: str):
             depth += 1
         elif token[0] in ("}", "]"):
             depth -= 1
-        elif depth == 0 and token[0] == "string" and token[3] == "plugins":
+        elif depth == 0 and token[0] == "string" and token[3] == setting:
             if index + 2 >= root_close or tokens[index + 1][0] != ":" or tokens[index + 2][0] != "[":
-                raise ValueError('the top-level "plugins" setting must be an array')
-            return add_to_array(source, tokens, index + 2, value)
+                raise ValueError(f'the top-level "{setting}" setting must be an array')
+            return tokens, root_close, index + 2
         index += 1
+    return tokens, root_close, None
+
+
+def register(source: str, setting: str, value: str):
+    tokens, root_close, opening_index = find_top_level_array(source, setting)
+    if opening_index is not None:
+        return add_to_array(source, tokens, opening_index, value)
 
     close = tokens[root_close]
     indentation = indent_for(source, tokens[0][1])
     encoded = json.dumps(value)
     body_tokens = tokens[1:root_close]
     if not body_tokens:
-        addition = f"\n{indentation}\"plugins\": [{encoded}]\n"
+        addition = f"\n{indentation}{json.dumps(setting)}: [{encoded}]\n"
     else:
         last = body_tokens[-1]
         separator = "" if last[0] == "," else ","
-        addition = f"{separator}\n{indentation}\"plugins\": [{encoded}]"
+        addition = f"{separator}\n{indentation}{json.dumps(setting)}: [{encoded}]"
         return source[:last[2]] + addition + source[last[2]:], True
     return source[:close[1]] + addition + source[close[1]:], True
 
 
-config_path.parent.mkdir(parents=True, exist_ok=True)
-original = config_path.read_text() if config_path.exists() else "{}\n"
-try:
-    parsed = parse_jsonc(original)
-    if not isinstance(parsed, dict):
-        raise ValueError("the CLI configuration must contain one top-level object")
-    updated, changed = register(original, plugin_url)
-    parse_jsonc(updated)
-except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as error:
-    raise SystemExit(f"Cannot update {config_path}: {error}")
+def remove_from_array(source, tokens, opening_index, value):
+    closing_index = matching_close(tokens, opening_index)
+    depth = 0
+    entries = []
+    for index in range(opening_index + 1, closing_index):
+        token = tokens[index]
+        if token[0] in ("{", "["):
+            depth += 1
+        elif token[0] in ("}", "]"):
+            depth -= 1
+        elif depth == 0 and token[0] == "string":
+            entries.append(index)
 
-if changed:
+    target = next((index for index in entries if tokens[index][3] == value), None)
+    if target is None:
+        return source, False
+    if target + 1 < closing_index and tokens[target + 1][0] == ",":
+        start, end = tokens[target][1], tokens[target + 1][2]
+    elif target - 1 > opening_index and tokens[target - 1][0] == ",":
+        start, end = tokens[target - 1][1], tokens[target][2]
+    else:
+        start, end = tokens[target][1], tokens[target][2]
+    return source[:start] + source[end:], True
+
+
+def unregister(source: str, setting: str, value: str):
+    tokens, _, opening_index = find_top_level_array(source, setting)
+    if opening_index is None:
+        return source, False
+    return remove_from_array(source, tokens, opening_index, value)
+
+
+def atomic_write(config_path: Path, updated: str):
     descriptor, temporary_path = tempfile.mkstemp(prefix=f".{config_path.name}.", dir=config_path.parent)
     try:
         with os.fdopen(descriptor, "w") as temporary:
@@ -265,8 +298,45 @@ if changed:
         if os.path.exists(temporary_path):
             os.unlink(temporary_path)
 
-print(f"Registered {plugin_url} in {config_path}")
+
+def update(config_path: Path, transform, create: bool):
+    if not create and not config_path.exists():
+        return False
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    original = config_path.read_text() if config_path.exists() else "{}\n"
+    try:
+        parsed = parse_jsonc(original)
+        if not isinstance(parsed, dict):
+            raise ValueError("the configuration must contain one top-level object")
+        updated, changed = transform(original)
+        parse_jsonc(updated)
+    except (OSError, UnicodeError, ValueError, json.JSONDecodeError) as error:
+        raise SystemExit(f"Cannot update {config_path}: {error}")
+    if changed:
+        atomic_write(config_path, updated)
+    return changed
+
+
+def migrate_cli(source: str):
+    without_legacy, removed = unregister(source, "plugins", legacy_plugin_url)
+    updated, added = register(without_legacy, "plugins", plugin_url)
+    return updated, removed or added
+
+
+update(cli_config_path, migrate_cli, True)
+removed_tui = update(
+    tui_config_path,
+    lambda source: unregister(source, "plugin", legacy_plugin_url),
+    False,
+)
+print(f"Registered {plugin_url} in {cli_config_path}")
+if removed_tui:
+    print(f"Removed stale TUI file registration from {tui_config_path}")
 PY
 
-echo "Installed OpenCode v2 skill-timeline to ${plugin_path}"
+if [[ -f "${legacy_plugin_path}" ]]; then
+  rm -f -- "${legacy_plugin_path}"
+fi
+
+echo "Installed OpenCode v2 skill-timeline TUI plugin to ${plugin_path}"
 echo "Restart OpenCode v2, open a session, and run /skill-timeline-v2."

@@ -1,12 +1,36 @@
 import { describe, expect, mock, test } from "bun:test"
-import type { Context } from "@opencode/plugin/tui/context"
+import type { Context } from "@opencode-ai/plugin/tui/context"
 import { extractV2SkillTimeline, openSkillTimelineV2, registerSkillTimelineV2 } from "../src/adapter"
 import v2Plugin from "../src/tui"
 
 describe("OpenCode v2 adapter", () => {
   test("exports a v2-only plugin definition", () => {
-    expect(v2Plugin).toMatchObject({ id: "skill-timeline-v2", setup: expect.any(Function) })
+    expect(v2Plugin.id).toBe("skill-timeline-v2")
+    expect(typeof v2Plugin.setup).toBe("function")
     expect(v2Plugin).not.toHaveProperty("tui")
+  })
+
+  test("registers its keymap layer from a TUI render scope", () => {
+    const layer = mock(() => {})
+    const dispose = mock(() => {})
+    let claim: { append?: string; render?: () => unknown } | undefined
+    const context = {
+      keymap: { layer },
+      ui: {
+        slot(value: typeof claim) {
+          claim = value
+          return dispose
+        },
+      },
+    }
+
+    const cleanup = v2Plugin.setup(context as never)
+
+    expect(claim?.append).toBe("app")
+    expect(layer).not.toHaveBeenCalled()
+    claim?.render?.()
+    expect(layer).toHaveBeenCalledTimes(1)
+    expect(cleanup).toBe(dispose)
   })
 
   test("extracts v2 skill tools while preserving visible turn context", () => {

@@ -1,4 +1,4 @@
-import type { Context } from "@opencode/plugin/tui/context"
+import type { Context } from "@opencode-ai/plugin/tui/context"
 import { extractSkillTimeline } from "../../../src/extract"
 import { formatTimelineTime } from "../../../src/present"
 import type { SkillTimelineEntry, TimelineMessage } from "../../../src/types"
