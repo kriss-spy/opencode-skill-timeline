@@ -9,7 +9,7 @@
     "build": "\"$npm_execpath\" build ./src/tui.tsx --outdir ./dist --target bun --external @opencode-ai/plugin --external @opencode-ai/plugin/tui --external @opentui/core --external @opentui/keymap --external @opentui/solid --external solid-js",
     "check": "\"$npm_execpath\" run typecheck && \"$npm_execpath\" run test && \"$npm_execpath\" run build",
     "prepack": "\"$npm_execpath\" run check",
-    "test": "cd test && \"$npm_execpath\" test beta.test.ts",
+    "test": "cd test && \"$npm_execpath\" test beta.test.ts && bash install.test.sh",
     "typecheck": "tsc --noEmit"
   },
   "exports": {

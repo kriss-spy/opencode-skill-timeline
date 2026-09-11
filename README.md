@@ -29,6 +29,8 @@ curl -fsSL https://github.com/kriss-spy/opencode-skill-timeline/releases/latest/
 
 Restart OpenCode, open a session, and run `/skill-timeline`. The installer downloads the release bundle, verifies its SHA-256 checksum, and writes it to `~/.config/opencode/plugins/skill-timeline.js` (or `$XDG_CONFIG_HOME/opencode/plugins/skill-timeline.js` when set).
 
+Because the release bundle is a TUI plugin, the installer also registers its absolute `file://` URL in the global `tui.json`. If `tui.jsonc` already exists, that file is updated instead. Existing settings, comments, and plugin registrations are preserved, and running the installer again does not add a duplicate entry. Python 3 is required for this configuration update.
+
 ### Install from source
 
 Build the package:
