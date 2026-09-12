@@ -22,7 +22,12 @@ function skillPart(part: unknown): RecordValue | undefined {
 function skillName(part: RecordValue): string {
   const state = part.state as RecordValue
   const input = state.input as RecordValue
-  return typeof input.name === "string" && input.name.trim() ? input.name.trim() : "(unknown skill)"
+  // OpenCode V2's native skill tool uses `id`; older/plugin-shaped calls use
+  // `name`. Accept both so the timeline reflects the actual tool input.
+  for (const key of ["name", "id", "skill"] as const) {
+    if (typeof input[key] === "string" && input[key].trim()) return input[key].trim()
+  }
+  return "(unknown skill)"
 }
 
 function status(part: RecordValue): SkillCallStatus {

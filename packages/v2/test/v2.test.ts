@@ -105,6 +105,23 @@ describe("OpenCode v2 adapter", () => {
     expect(entries[0]).toMatchObject({ skill: "(unknown skill)", status: "running", timestamp: 220 })
   })
 
+  test("reads the native v2 skill id input", () => {
+    const entries = extractV2SkillTimeline("session-2", [{
+      id: "assistant-1",
+      type: "assistant",
+      time: { created: 200 },
+      content: [{
+        id: "tool-1",
+        type: "tool",
+        name: "skill",
+        state: { status: "completed", input: { id: "opencode" }, content: [{ type: "text", text: "loaded" }] },
+        time: { created: 220, ran: 225, completed: 230 },
+      }],
+    }])
+
+    expect(entries[0]).toMatchObject({ skill: "opencode", status: "completed" })
+  })
+
   test("registers and opens the v2 slash command from public APIs", async () => {
     let layerFactory: (() => { commands?: readonly { id?: string; slash?: { name: string }; run: () => Promise<void> }[] }) | undefined
     const sync = mock(async () => {})
