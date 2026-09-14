@@ -85,17 +85,16 @@ export function selectTimelineEntry(
   api: TuiPluginApi,
   entry: SkillTimelineEntry,
   entries: readonly SkillTimelineEntry[] = [entry],
-): boolean {
-  const located = scrollToTimelineEntry(api, entry, entries)
+): void {
   api.ui.dialog.clear()
-  if (!located) {
+  setTimeout(() => {
+    if (scrollToTimelineEntry(api, entry, entries)) return
     api.ui.toast({
       variant: "warning",
       title: "Skill Timeline",
       message: "The exact skill call is not rendered. Show tool details and try again.",
     })
-  }
-  return located
+  }, 0)
 }
 
 function currentSessionID(api: TuiPluginApi): string | undefined {
