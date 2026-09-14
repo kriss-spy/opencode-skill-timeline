@@ -1,6 +1,12 @@
 import { describe, expect, mock, test } from "bun:test"
 import type { Context } from "@opencode-ai/plugin/tui/context"
-import { extractV2SkillTimeline, openSkillTimelineV2, registerSkillTimelineV2 } from "../src/adapter"
+import type { SkillTimelineEntry } from "../../../src/types"
+import {
+  extractV2SkillTimeline,
+  openSkillTimelineV2,
+  registerSkillTimelineV2,
+  scrollToTimelineEntryV2,
+} from "../src/adapter"
 import v2Plugin from "../src/tui"
 
 describe("OpenCode v2 adapter", () => {
@@ -164,6 +170,205 @@ describe("OpenCode v2 adapter", () => {
       title: "Skill Timeline v2",
       options: [expect.objectContaining({ title: "testing" })],
     }))
+  })
+
+  test("scrolls the session viewport to the skill selected with Enter", () => {
+    const scrollTo = mock(() => {})
+    const viewport = {
+      id: "session-scroll",
+      y: 2,
+      scrollTop: 20,
+      stickyScroll: true,
+      viewport: { y: 4 },
+      scrollTo,
+      getChildren: () => [skillRow],
+    }
+    const skillRow = {
+      // OpenCode gives the first assistant row the message boundary ID.
+      id: "assistant-1",
+      y: 30,
+      getChildren: () => [],
+    }
+    const root = {
+      id: "root",
+      y: 0,
+      getChildren: () => [viewport],
+    }
+    const entry = extractV2SkillTimeline("session-2", [{
+      id: "assistant-1",
+      type: "assistant",
+      time: { created: 200 },
+      content: [{
+        id: "tool-1",
+        type: "tool",
+        name: "skill",
+        state: { status: "completed", input: { id: "testing" } },
+        time: { created: 220, ran: 230, completed: 240 },
+      }],
+    }])[0]
+
+    expect(scrollToTimelineEntryV2({ renderer: { root } } as unknown as Context, entry, true)).toBe(true)
+    expect(viewport.stickyScroll).toBe(false)
+    expect(scrollTo).toHaveBeenCalledWith(45)
+  })
+
+  test("does not use a same-skill message boundary for a later repeated call", () => {
+    const scrollTo = mock(() => {})
+    const firstSkillRow = {
+      id: "assistant-1",
+      y: 10,
+      plainText: 'Skill "testing"',
+      getChildren: () => [],
+    }
+    const viewport = {
+      id: "session-scroll",
+      y: 2,
+      scrollTop: 0,
+      viewport: { y: 4 },
+      scrollTo,
+      getChildren: () => [firstSkillRow],
+    }
+    const entry = {
+      sessionID: "session-2",
+      messageID: "assistant-1",
+      anchorMessageID: "user-1",
+      partID: "tool-2",
+      callID: "tool-2",
+      skill: "testing",
+      timestamp: 240,
+      sequence: 1,
+      context: "Load it again.",
+      status: "completed",
+    } satisfies SkillTimelineEntry
+
+    expect(scrollToTimelineEntryV2({
+      renderer: { root: { id: "root", y: 0, getChildren: () => [viewport] } },
+    } as unknown as Context, entry)).toBe(false)
+    expect(scrollTo).not.toHaveBeenCalled()
+  })
+
+  test("uses the selected entry returned by the native dialog", async () => {
+    const scrollTo = mock(() => {})
+    const skillRow = {
+      id: "session-part:assistant-1:tool-1",
+      y: 30,
+      getChildren: () => [],
+    }
+    const viewport = {
+      id: "session-scroll",
+      y: 2,
+      scrollTop: 0,
+      stickyScroll: true,
+      viewport: { y: 4 },
+      scrollTo,
+      getChildren: () => [skillRow],
+    }
+    const show = mock(() => {})
+    const context = {
+      renderer: { root: { id: "root", y: 0, getChildren: () => [viewport] } },
+      ui: {
+        router: { current: () => ({ type: "session", sessionID: "session-2" }) },
+        toast: { show },
+        dialog: {
+          alert: mock(async () => {}),
+          select: mock(async (options: { options: { value: SkillTimelineEntry }[] }) => options.options[0].value),
+        },
+      },
+      data: {
+        session: {
+          message: {
+            sync: mock(async () => {}),
+            list: () => [{
+              id: "assistant-1",
+              type: "assistant",
+              time: { created: 200 },
+              content: [
+                { type: "text", text: "I will load the skill." },
+                {
+                  id: "tool-1",
+                  type: "tool",
+                  name: "skill",
+                  state: { status: "completed", input: { id: "testing" } },
+                  time: { created: 220, ran: 230, completed: 240 },
+                },
+              ],
+            }],
+          },
+        },
+      },
+    } as unknown as Context
+
+    expect(await openSkillTimelineV2(context)).toBe(true)
+    expect(scrollTo).toHaveBeenCalledWith(25)
+    expect(show).not.toHaveBeenCalled()
+  })
+
+  test("reveals virtualized history before locating an unmounted skill row", async () => {
+    const scrollTo = mock(() => {})
+    const children: Array<{ id: string; y: number; getChildren: () => never[] }> = []
+    const viewport = {
+      id: "session-scroll",
+      y: 2,
+      scrollTop: 0,
+      scrollHeight: 100,
+      stickyScroll: true,
+      viewport: { y: 4 },
+      scrollTo,
+      getChildren: () => children,
+    }
+    let loadingHead = false
+    let idleCalls = 0
+    const currentMessages: unknown[] = [{
+      id: "assistant-1",
+      type: "assistant",
+      time: { created: 200 },
+      content: [{
+        id: "tool-1",
+        type: "tool",
+        name: "skill",
+        state: { status: "completed", input: { id: "testing" } },
+        time: { created: 220, ran: 230, completed: 240 },
+      }],
+    }]
+    const dispatch = mock((id: string) => {
+      if (id === "session.first") loadingHead = true
+      if (id === "session.page.down") children.push({ id: "assistant-1", y: 30, getChildren: () => [] })
+    })
+    const idle = mock(async () => {
+      idleCalls++
+      if (loadingHead && idleCalls === 2) {
+        currentMessages.unshift({ id: "user-0", type: "user", text: "Start", time: { created: 100 } })
+        children.push({ id: "user-0", y: 5, getChildren: () => [] })
+      }
+    })
+    const context = {
+      renderer: {
+        root: { id: "root", y: 0, getChildren: () => [viewport] },
+        idle,
+      },
+      keymap: { dispatch },
+      ui: {
+        router: { current: () => ({ type: "session", sessionID: "session-2" }) },
+        toast: { show: mock(() => {}) },
+        dialog: {
+          alert: mock(async () => {}),
+          select: mock(async (options: { options: { value: SkillTimelineEntry }[] }) => options.options[0].value),
+        },
+      },
+      data: {
+        session: {
+          message: {
+            sync: mock(async () => {}),
+            list: () => currentMessages,
+          },
+        },
+      },
+    } as unknown as Context
+
+    expect(await openSkillTimelineV2(context)).toBe(true)
+    expect(dispatch).toHaveBeenCalledWith("session.first")
+    expect(dispatch).toHaveBeenCalledWith("session.page.down")
+    expect(scrollTo).toHaveBeenCalledWith(25)
   })
 
   test("warns outside a v2 session", async () => {
