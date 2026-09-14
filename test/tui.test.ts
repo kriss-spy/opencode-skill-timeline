@@ -182,7 +182,55 @@ describe("skill timeline TUI registration", () => {
     expect(scrollBy).toHaveBeenCalledWith(27)
   })
 
-  test("warns only when the containing message cannot be rendered", () => {
+  test("waits for the dialog to close before locating the selected skill", async () => {
+    let dialogOpen = true
+    const clear = mock(() => {
+      dialogOpen = false
+    })
+    const scrollBy = mock(() => {})
+    const anchor = { id: "user-message-1", y: 12, getChildren: () => [] }
+    const skillText = { id: "skill-text", y: 40, plainText: 'Skill "testing"', getChildren: () => [] }
+    const skillRow = { id: "skill-row", y: 39, getChildren: () => [skillText] }
+    const viewport = {
+      id: "session-scroll",
+      y: 3,
+      viewport: { y: 5 },
+      getChildren: () => [anchor, skillRow],
+      findDescendantById: (id: string) => id === anchor.id ? anchor : undefined,
+      scrollBy,
+    }
+    const root = {
+      id: "root",
+      y: 0,
+      getChildren: () => dialogOpen ? [] : [viewport],
+    }
+    const api = {
+      renderer: { root },
+      kv: { get: () => true },
+      ui: { dialog: { clear }, toast: mock(() => {}) },
+    } as unknown as TuiPluginApi
+    const entry = {
+      sessionID: "session-1",
+      messageID: "assistant-message-1",
+      anchorMessageID: "user-message-1",
+      partID: "part-1",
+      callID: "call-1",
+      skill: "testing",
+      timestamp: 100,
+      sequence: 0,
+      context: "Run the tests.",
+      status: "completed",
+    } satisfies SkillTimelineEntry
+
+    selectTimelineEntry(api, entry)
+
+    expect(clear).toHaveBeenCalledTimes(1)
+    expect(scrollBy).not.toHaveBeenCalled()
+    await Bun.sleep(1)
+    expect(scrollBy).toHaveBeenCalledWith(33)
+  })
+
+  test("warns only when the containing message cannot be rendered", async () => {
     const harness = fakeApi()
     const root = { id: "root", y: 0, getChildren: () => [] }
     ;(harness.api as unknown as { renderer: { root: typeof root } }).renderer = { root }
@@ -199,8 +247,10 @@ describe("skill timeline TUI registration", () => {
       status: "completed",
     } satisfies SkillTimelineEntry
 
-    expect(selectTimelineEntry(harness.api, entry)).toBe(false)
+    selectTimelineEntry(harness.api, entry)
     expect(harness.clear).toHaveBeenCalledTimes(1)
+    expect(harness.toast).not.toHaveBeenCalled()
+    await Bun.sleep(1)
     expect(harness.toast).toHaveBeenCalledWith({
       variant: "warning",
       title: "Skill Timeline",
