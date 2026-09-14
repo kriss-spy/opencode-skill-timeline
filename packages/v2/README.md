@@ -9,7 +9,7 @@ This package is the independent OpenCode v2 beta port exposed as `/skill-timelin
 - `@opencode-ai/plugin` `0.0.0-beta-19059` for development types
 - Bun runtime
 
-The distributed bundle is self-contained, so config-scoped installs do not depend on either SDK package being runtime-resolvable. The v2 plugin API is still beta. This port uses the public session-data, keymap, and dialog APIs. The searchable picker displays every skill call with its preceding context and timestamp. Exact jump-to-call behavior remains unavailable until v2 exposes a stable public navigation API for rendered tool calls.
+The distributed bundle is self-contained, so config-scoped installs do not depend on either SDK package being runtime-resolvable. The v2 plugin API is still beta. This port uses the public session-data, keymap, dialog, and renderer APIs. The searchable picker displays every skill call with its preceding context and timestamp. Confirming an entry with Enter reveals virtualized history when needed and aligns the exact skill call near the top of the session viewport.
 
 ## Development
 
@@ -28,10 +28,10 @@ Once the beta package is published:
 opencode2 plugin add opencode-skill-timeline-v2@beta
 ```
 
-For the separate `v2-latest` release channel:
+Install the versioned beta release:
 
 ```bash
-curl -fsSL https://github.com/kriss-spy/opencode-skill-timeline/releases/download/v2-latest/install.sh | bash
+curl -fsSL https://github.com/kriss-spy/opencode-skill-timeline/releases/download/v2-0.1.0-beta.1/install.sh | bash
 ```
 
 The installer verifies `skill-timeline-v2.js`, installs it as `~/.config/opencode/plugins/skill-timeline-v2/tui.js`, and registers that plugin directory in `~/.config/opencode/cli.json`. The directory layout lets OpenCode v2 resolve it as a TUI-only entrypoint instead of treating a direct JavaScript file as a server plugin. It also removes the stale direct-file registration created by earlier beta installers.

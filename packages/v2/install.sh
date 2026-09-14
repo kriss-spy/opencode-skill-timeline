@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-readonly release_base_url="${OPENCODE_SKILL_TIMELINE_RELEASE_URL:-https://github.com/kriss-spy/opencode-skill-timeline/releases/download/v2-latest}"
+readonly release_base_url="${OPENCODE_SKILL_TIMELINE_RELEASE_URL:-https://github.com/kriss-spy/opencode-skill-timeline/releases/download/v2-0.1.0-beta.1}"
 readonly config_home="${XDG_CONFIG_HOME:-${HOME}/.config}"
 readonly opencode_config_dir="${OPENCODE_CONFIG_DIR:-${config_home}/opencode}"
 readonly plugins_dir="${opencode_config_dir}/plugins"
